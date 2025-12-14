@@ -35,7 +35,7 @@ def setup_logger(
 
     # Create logger
     logger = logging.getLogger(name)
-    logger.setLevel(log_level)
+    logger.setLevel(logging.DEBUG)  # Logger 本身设置为 DEBUG，让 handler 来过滤
 
     # Avoid adding handlers multiple times
     if logger.handlers:
@@ -49,19 +49,19 @@ def setup_logger(
         show_path=False,
         console=Console(stderr=True),
     )
-    console_handler.setLevel(log_level)
+    console_handler.setLevel(log_level)  # 使用配置的级别（默认 INFO）
     console_format = logging.Formatter(
         "%(message)s",
         datefmt="[%X]"
     )
     console_handler.setFormatter(console_format)
 
-    # File handler
+    # File handler - 始终使用 DEBUG 级别以记录详细日志
     log_file = Path(settings.log_file)
     log_file.parent.mkdir(parents=True, exist_ok=True)
 
     file_handler = logging.FileHandler(log_file, encoding="utf-8")
-    file_handler.setLevel(log_level)
+    file_handler.setLevel(logging.DEBUG)  # 文件始终记录 DEBUG 级别
     file_format = logging.Formatter(
         "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
         datefmt="%Y-%m-%d %H:%M:%S"

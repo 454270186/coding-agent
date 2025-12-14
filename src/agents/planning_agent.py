@@ -14,43 +14,45 @@ from src.utils.logger import get_logger
 
 logger = get_logger(__name__)
 
-PLANNING_PROMPT = """你是一个资深软件架构师。你的任务是分析用户需求，设计系统架构，并将需求分解为可执行的子任务。
+PLANNING_PROMPT = """You are a senior software architect. Your task is to analyze user requirements, design system architecture, and decompose requirements into executable subtasks.
 
-用户需求：
+User Requirements:
 {task_description}
 
-请按以下步骤完成规划：
+Please complete the planning following these steps:
 
-1. **理解需求**：仔细分析用户的核心需求和约束，只关注明确提到的功能
-2. **架构设计**：基于实际需求设计系统架构，不要添加未要求的功能
-3. **技术选型**：前端选原生html+css+js
-4. **任务分解**：将需求分解为2-5个功能模块级别的子任务
+1. **Understand Requirements**: Carefully analyze the user's core requirements and constraints, focus only on explicitly mentioned features
+2. **Architecture Design**: Design system architecture based on actual requirements, don't add unrequested features
+3. **Technology Selection**: For frontend, use native HTML + CSS + JS
+4. **Task Decomposition**: Decompose requirements into 2-5 functional module-level subtasks
 
-**重要规则：**
-- 每个子任务应该是一个完整的功能模块（如"用户界面组件"、"数据展示层"、"交互逻辑"等）
-- 一个子任务可能包含多个文件（HTML, CSS, JS等）
-- 明确标注任务之间的依赖关系
-- 如果需要外部数据，根据需求选择合适的API或数据源
-- **UI设计要求**：界面要美观、现代化，注重用户体验，使用合理的颜色、间距和布局
-- 设计要考虑可扩展性和维护性
-- 保持架构简洁，避免过度设计
-- **严格按照用户需求，不要臆测或添加额外功能**
+**Important Rules:**
+- Each subtask should be a complete functional module (e.g., "User Interface Components", "Data Display Layer", "Interaction Logic", etc.)
+- One subtask may contain multiple files (HTML, CSS, JS, etc.)
+- Clearly mark dependency relationships between tasks
+- If external data is needed, note that the Coding Agent will fetch real API data during code generation (20-50 items minimum) and embed it as static data (no runtime fetch() calls)
+- **No Mock Data**: Unless explicitly specified by user, do NOT use mock/fake data. Real data will be fetched via API and embedded statically with sufficient quantity
+- **Navigation Bar Required**: If the project has multiple pages, MUST include a navigation bar for page switching
+- **UI Design Requirements**: Interface should be beautiful and modern, focus on user experience, use reasonable colors, spacing, and layout
+- Design should consider scalability and maintainability
+- Keep architecture simple, avoid over-design
+- **Strictly follow user requirements, don't speculate or add extra features**
 
-请以 JSON 格式返回规划结果，包含以下字段：
+Please return the planning results in JSON format with the following fields:
 
 ```json
 {{
-  "architecture_plan": "架构设计的详细说明",
+  "architecture_plan": "Detailed description of architecture design",
   "technology_stack": {{
-    "frontend": "技术栈名称",
-    "styling": "CSS 方案",
-    "data": "数据获取方式"
+    "frontend": "Technology stack name",
+    "styling": "CSS solution",
+    "data": "Data acquisition method"
   }},
   "subtasks": [
     {{
       "id": "task_1",
-      "title": "任务标题",
-      "description": "详细描述",
+      "title": "Task title",
+      "description": "Detailed description",
       "files_to_create": ["index.html", "styles/main.css", "js/app.js"],
       "dependencies": [],
       "status": "pending"
@@ -59,7 +61,7 @@ PLANNING_PROMPT = """你是一个资深软件架构师。你的任务是分析�
 }}
 ```
 
-请直接返回 JSON，不要添加额外的说明文字。
+Please return JSON directly without additional explanatory text.
 """
 
 
@@ -97,8 +99,21 @@ def planning_node(state: AgentState) -> dict:
 
     try:
         # 调用 LLM
+        logger.debug("=" * 80)
+        logger.debug("PLANNING AGENT - INPUT PROMPT:")
+        logger.debug("=" * 80)
+        logger.debug(prompt)
+        logger.debug("=" * 80)
+
         logger.debug("Planning Agent: Invoking LLM")
         response = llm.invoke(messages)
+
+        logger.debug("=" * 80)
+        logger.debug("PLANNING AGENT - RAW RESPONSE:")
+        logger.debug("=" * 80)
+        logger.debug(response.content)
+        logger.debug("=" * 80)
+
         logger.debug(f"Planning Agent: Received response ({len(response.content)} chars)")
 
         # 解析响应

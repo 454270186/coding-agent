@@ -14,6 +14,7 @@ from rich.text import Text
 def get_task_input(console: Console) -> Optional[str]:
     """
     Get task description from user input.
+    Supports multi-line input for pasting long text.
 
     Args:
         console: Rich console for output.
@@ -33,29 +34,42 @@ def get_task_input(console: Console) -> Optional[str]:
         style="dim"
     )
     instructions.append(
+        "\nYou can paste multi-line text or type multiple lines.\n",
+        style="dim"
+    )
+    instructions.append(
+        "Press Ctrl+D (Unix/Mac) or Ctrl+Z+Enter (Windows) when done.\n",
+        style="dim italic"
+    )
+    instructions.append(
         "Press Ctrl+C to cancel.\n",
         style="dim italic"
     )
 
     console.print(instructions)
     console.print()
+    console.print("[bold green]Task Description:[/bold green]", end=" ")
 
     try:
-        # Get single-line input
-        task = Prompt.ask(
-            "[bold green]Task Description",
-            console=console
-        )
+        # Get multi-line input
+        lines = []
+        while True:
+            try:
+                line = input()
+                lines.append(line)
+            except EOFError:
+                # User pressed Ctrl+D, finish input
+                break
 
-        # Validate input
-        task = task.strip()
+        # Join lines and validate
+        task = "\n".join(lines).strip()
         if not task:
-            console.print("[red]Error: Task description cannot be empty.[/red]")
+            console.print("\n[red]Error: Task description cannot be empty.[/red]")
             return None
 
         return task
 
-    except (KeyboardInterrupt, EOFError):
+    except KeyboardInterrupt:
         console.print("\n[yellow]Task input cancelled.[/yellow]")
         return None
 

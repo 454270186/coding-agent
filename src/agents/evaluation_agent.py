@@ -15,36 +15,90 @@ from src.tools.execution import run_syntax_check
 
 logger = get_logger(__name__)
 
-EVALUATION_PROMPT = """你是一个代码审查员。你的任务是评估生成的代码是否满足需求。
+EVALUATION_PROMPT = """You are a code reviewer. Your task is to evaluate whether the generated code meets requirements and detect technical integration errors.
 
-**原始需求：**
+**Original Requirements:**
 {task_description}
 
-**任务列表：**
+**Task List:**
 {subtasks}
 
-**生成的文件：**
+**Generated Files:**
 {generated_files}
 
-**语法检查结果：**
+**File Contents (for checking integration issues):**
+{file_contents}
+
+**Syntax Check Results:**
 {syntax_results}
 
-请从以下方面评估：
+Please evaluate from the following aspects:
 
-1. **核心功能**：基本实现了需求中的主要功能
-2. **语法正确性**：代码没有明显的语法错误
-3. **文件结构**：有必要的HTML/CSS/JS文件
-4. **基本可用性**：代码逻辑基本合理
-5. **UI质量**：界面是否美观、现代化，布局是否合理，是否有足够的样式
+## Part 1: Technical Integration Checks (Critical - Must Pass)
 
-**评估原则（重要）：**
-- **文件名不重要**：只要文件引用关系正确，文件名不同没关系
-- **关注功能和UI**：核心功能能用，UI要基本美观
-- **UI评判标准**：如果CSS过于简单（少于20行）或者没有基本样式（颜色、间距、布局），判定为不合格
-- **宽松评判**：语法检查通过、有合理样式的代码，默认为合格
-- **只在明显缺陷时才判定失败**：如缺少关键文件、功能完全不对、语法错误、UI过于简陋等
+Carefully check the following common technical integration errors. **These are fatal issues that prevent code from running**:
 
-对于每个任务，请返回评估结果：
+1. **ES6 Module Errors**:
+   - ✓ Check: If JS files use `import`/`export`, HTML `<script>` tags must have `type="module"` attribute
+
+2. **HTML and CSS Selector Matching**:
+   - ✓ Check: If HTML uses `class="xxx"`, CSS should use `.xxx`; if HTML uses `id="xxx"`, CSS should use `#xxx`
+
+3. **File Reference Paths**:
+   - ✓ Check: Whether CSS/JS file paths referenced in HTML match the actual generated file paths
+
+4. **JavaScript Function Calls**:
+   - ✓ Check: Whether function call parameter types and counts match the function definition
+
+5. **DOM Element References**:
+   - ✓ Check: Whether elements retrieved by ID/class in JS exist in HTML
+
+6. **Necessary Rendering Functions**:
+   - ✓ Check: If there is game logic or dynamic content, there must be rendering functions to display data on the page
+
+7. **No Runtime API Calls (Critical)**:
+   - ✓ Check: JavaScript code should NOT contain runtime fetch(), XMLHttpRequest, or axios API calls
+   - ✓ Check: Data should be embedded as static JavaScript constants (e.g., const STATIC_DATA = <data>)
+   - ✓ Check: Static data should contain sufficient items (at least 10+ items, not just 1-2 samples)
+   - ✓ Check: No placeholder comments like "// More entries..." - all data should be present
+   - ❌ Wrong example: fetch('http://api.example.com/data').then(...) or const DATA = <two items>, // More entries...
+   - ✓ Correct example: const STATIC_DATA = <20+ complete items>; // Use STATIC_DATA directly
+   - ✓ Reason: Runtime API calls cause CORS errors; static data approach eliminates this issue
+
+8. **JavaScript Loading Timing (Critical)**:
+   - ✓ Check: When HTML `<script>` tags reference external JS files, they must satisfy one of the following:
+     a) Use `defer` attribute: `<script src="..." defer></script>` (Recommended)
+     b) Place `<script>` tag before the closing `</body>` tag
+     c) Wrap all DOM operations in JS code with DOMContentLoaded event
+   - ✓ Check: Ensure DOM operations in JS code (getElementById, addEventListener, etc.) execute after elements exist
+   - ❌ Wrong example: Using `<script src="app.js"></script>` in `<head>` without defer
+   - ✓ Correct example: `<script src="app.js" defer></script>` or placing at body bottom
+   - ✓ Reason: Otherwise getElementById/querySelector returns null, causing "Cannot read properties of null" runtime error
+
+9. **Page Navigation Completeness (Important)**:
+   - ✓ Check: If project has multiple HTML pages, verify bidirectional navigation exists
+   - ✓ Check: List pages should link to detail pages (e.g., click on item to view details)
+   - ✓ Check: Detail pages should link back to list/home pages (e.g., back button or navigation bar)
+   - ✓ Check: Navigation bar (if exists) should include links to all major pages
+   - ❌ Wrong example: paperDetail.html links to index.html, but index.html has no way to reach paperDetail.html
+   - ✓ Correct example: index.html displays paper list with clickable links to paperDetail.html, and paperDetail.html has back button to index.html
+
+## Part 2: Functionality and Quality Evaluation
+
+10. **Core Functionality**: Basically implements the main features in the requirements
+11. **Syntax Correctness**: Code has no obvious syntax errors
+12. **File Completeness**: Has necessary HTML/CSS/JS files
+13. **Basic Usability**: Code logic is generally reasonable
+14. **UI Quality**: Whether the interface is beautiful and modern, whether the layout is reasonable, whether there are sufficient styles
+
+**Evaluation Principles (Important):**
+- **Technical errors in Part 1 must be reported**: Any integration error will cause code to fail, and must be clearly stated in issues
+- **Provide specific fix suggestions**: Don't just say "there's a problem", point out which file and which line needs how to be modified
+- **Filenames don't matter**: As long as file reference relationships are correct, different filenames are okay
+- **UI Criteria**: If CSS is too simple (less than 20 lines) or lacks basic styles (color, spacing, layout), mark as fail
+- **Lenient on functionality**: Only mark as fail on obvious defects
+
+For each task, please return evaluation results:
 
 ```json
 {{
@@ -52,16 +106,16 @@ EVALUATION_PROMPT = """你是一个代码审查员。你的任务是评估生成
     {{
       "task_id": "task_1",
       "passed": true/false,
-      "issues": ["问题描述1", "问题描述2"],
-      "suggestions": ["修复建议1", "修复建议2"]
+      "issues": ["Issue description 1", "Issue description 2"],
+      "suggestions": ["Fix suggestion 1", "Fix suggestion 2"]
     }}
   ],
   "overall_passed": true/false,
-  "summary": "整体评估总结"
+  "summary": "Overall evaluation summary"
 }}
 ```
 
-请直接返回 JSON，不要添加额外的说明文字。
+Please return JSON directly without additional explanatory text.
 """
 
 
@@ -118,11 +172,24 @@ def evaluation_node(state: AgentState) -> dict:
     # 准备文件列表
     files_list = list(state.get("generated_files", {}).keys())
 
+    # 准备文件内容（用于检查集成问题）
+    file_contents = {}
+    for file_path, file_info in state.get("generated_files", {}).items():
+        content = file_info.get("content", "")
+        # 只显示前100行，避免prompt过长
+        lines = content.split("\n")
+        if len(lines) > 100:
+            preview = "\n".join(lines[:100]) + f"\n... (省略 {len(lines) - 100} 行)"
+        else:
+            preview = content
+        file_contents[file_path] = preview
+
     # 构建提示
     prompt = EVALUATION_PROMPT.format(
         task_description=state["task_description"],
         subtasks=json.dumps(subtasks_info, indent=2, ensure_ascii=False),
         generated_files=json.dumps(files_list, indent=2, ensure_ascii=False),
+        file_contents=json.dumps(file_contents, indent=2, ensure_ascii=False),
         syntax_results=json.dumps(syntax_results, indent=2, ensure_ascii=False)
     )
 
@@ -133,8 +200,21 @@ def evaluation_node(state: AgentState) -> dict:
 
     try:
         # 调用 LLM
+        logger.debug("=" * 80)
+        logger.debug("EVALUATION AGENT - INPUT PROMPT:")
+        logger.debug("=" * 80)
+        logger.debug(prompt)
+        logger.debug("=" * 80)
+
         logger.debug("Evaluation Agent: Invoking LLM")
         response = llm.invoke(messages)
+
+        logger.debug("=" * 80)
+        logger.debug("EVALUATION AGENT - RAW RESPONSE:")
+        logger.debug("=" * 80)
+        logger.debug(response.content)
+        logger.debug("=" * 80)
+
         logger.debug(f"Evaluation Agent: Received response ({len(response.content)} chars)")
 
         # 解析响应
