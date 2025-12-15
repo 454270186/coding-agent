@@ -14,54 +14,51 @@ from src.utils.logger import get_logger
 
 logger = get_logger(__name__)
 
-PLANNING_PROMPT = """You are a senior software architect. Your task is to analyze user requirements, design system architecture, and decompose requirements into executable subtasks.
+PLANNING_PROMPT = """You are a senior software architect. Your task is to analyze user requirements, design a simple and practical system architecture, and decompose them into executable subtasks.
 
 User Requirements:
 {task_description}
 
-Please complete the planning following these steps:
+Please follow these steps:
 
-1. **Understand Requirements**: Carefully analyze the user's core requirements and constraints, focus only on explicitly mentioned features
-2. **Architecture Design**: Design system architecture based on actual requirements, don't add unrequested features
-3. **Technology Selection**: For frontend, use native HTML + CSS + JS
-4. **Task Decomposition**: Decompose requirements into 2-5 functional module-level subtasks
+1. **Understand Requirements**: Strictly focus on explicitly stated requirements and constraints. Do NOT add unrequested features.
+2. **Architecture Design**: Keep it simple, scalable, and maintainable. Avoid over-engineering.
+3. **Technology Selection**:
+   - Frontend: Native HTML + CSS + JavaScript (no frameworks unless requested).
+   - If external APIs are involved and there is risk of CORS issues in browser, design a lightweight backend proxy (Flask or FastAPI).
+   - If the external API supports CORS or the project is simple, frontend can call APIs directly.
+4. **Task Decomposition**: Break down into 2-5 functional module-level subtasks.
+   - Each subtask can contain multiple files.
+   - Clearly indicate dependencies between subtasks.
+   - If the project involves multiple pages, include a navigation bar unless explicitly not needed.
+   - If displaying lists of items (e.g., papers, products), include both list and detail views ONLY if it meaningfully improves user experience or is explicitly required.
 
-**Important Rules:**
-- Each subtask should be a complete functional module (e.g., "User Interface Components", "Data Display Layer", "Interaction Logic", etc.)
-- One subtask may contain multiple files (HTML, CSS, JS, etc.)
-- Clearly mark dependency relationships between tasks
-- If external data is needed, note that the Coding Agent will fetch real API data during code generation (20-50 items minimum) and embed it as static data (no runtime fetch() calls)
-- **No Mock Data**: Unless explicitly specified by user, do NOT use mock/fake data. Real data will be fetched via API and embedded statically with sufficient quantity
-- **Navigation Bar Required**: If the project has multiple pages, MUST include a navigation bar for page switching
-- **UI Design Requirements**: Interface should be beautiful and modern, focus on user experience, use reasonable colors, spacing, and layout
-- Design should consider scalability and maintainability
-- Keep architecture simple, avoid over-design
-- **Strictly follow user requirements, don't speculate or add extra features**
+**Key Rules**:
+- Prioritize real data from external APIs. Use mock data ONLY if explicitly allowed by the user or if the API is unreliable/unavailable.
+- UI must be modern, clean, responsive, with good spacing, colors, and interactive feedback.
+- Strictly follow user requirements — do not speculate or add extra functionality.
 
-Please return the planning results in JSON format with the following fields:
+Return ONLY valid JSON in this format:
 
-```json
 {{
-  "architecture_plan": "Detailed description of architecture design",
+  "architecture_plan": "Detailed but concise architecture description",
   "technology_stack": {{
-    "frontend": "Technology stack name",
-    "styling": "CSS solution",
-    "data": "Data acquisition method"
+    "frontend": "HTML/CSS/JS",
+    "styling": "Pure CSS (or Tailwind if requested)",
+    "backend": "None / Flask / FastAPI (with reason)",
+    "data": "Direct API calls or backend proxy (with reason)"
   }},
   "subtasks": [
     {{
       "id": "task_1",
-      "title": "Task title",
-      "description": "Detailed description",
+      "title": "Clear task title",
+      "description": "Detailed description of what this subtask achieves",
       "files_to_create": ["index.html", "styles/main.css", "js/app.js"],
       "dependencies": [],
       "status": "pending"
     }}
   ]
 }}
-```
-
-Please return JSON directly without additional explanatory text.
 """
 
 
@@ -82,7 +79,7 @@ def planning_node(state: AgentState) -> dict:
     settings = get_settings()
     llm = ChatOpenAI(
         model=settings.get_planner_model(),
-        temperature=0.3,
+        temperature=0.1,  # Lower temperature for more consistent planning
         base_url=settings.openai_base_url,
         api_key=settings.openai_api_key
     )

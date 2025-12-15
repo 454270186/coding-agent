@@ -55,6 +55,9 @@ def fix_node(state: AgentState) -> dict:
                     logger.debug(f"Fix Agent: Collected issues for {file_path}")
             else:
                 logger.warning(f"Fix Agent: Could not find task with id {task_id}")
+                logger.warning(f"Fix Agent: Available task IDs in state: {[t['id'] for t in state.get('subtasks', [])]}")
+                logger.warning(f"Fix Agent: This usually means the evaluation agent returned a wrong task_id.")
+                logger.warning(f"Fix Agent: Check if evaluation agent is using the ACTUAL task IDs from subtasks.")
 
     if not issues_by_file:
         logger.warning("Fix Agent: No files with issues found")
@@ -66,7 +69,21 @@ def fix_node(state: AgentState) -> dict:
 
     # 创建修改任务
     modification_tasks = []
+    generated_files = state.get("generated_files", {})
+
     for i, (file_path, problems) in enumerate(issues_by_file.items()):
+        # Skip data files that don't exist in generated_files
+        # These are files that were referenced but never created (e.g., LLM hallucinated the filename)
+        if file_path.startswith("data/") and file_path not in generated_files:
+            logger.warning(f"Fix Agent: Skipping non-existent data file {file_path} - cannot modify a file that doesn't exist")
+            logger.warning(f"Fix Agent: This likely means the LLM referenced a data file that was never created. Issues: {problems['issues'][:2]}")
+            continue
+
+        # For non-data files, also check if they exist
+        if file_path not in generated_files:
+            logger.warning(f"Fix Agent: Skipping non-existent file {file_path} - file was never created")
+            continue
+
         modification_task = {
             "id": f"fix_{iteration}_{i}",
             "title": f"修复 {file_path}",
@@ -81,6 +98,14 @@ def fix_node(state: AgentState) -> dict:
         }
         modification_tasks.append(modification_task)
         logger.info(f"Fix Agent: Created modification task for {file_path} with {len(problems['issues'])} issues")
+
+    if not modification_tasks:
+        logger.warning("Fix Agent: No valid files to fix (all files were non-existent or data files)")
+        return {
+            "current_phase": "completed",
+            "is_success": False,
+            "final_message": "No valid files to fix - referenced files don't exist"
+        }
 
     logger.info(f"Fix Agent: Created {len(modification_tasks)} modification tasks")
 

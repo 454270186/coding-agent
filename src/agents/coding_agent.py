@@ -14,7 +14,6 @@ from src.graph.state import AgentState
 from src.config.settings import get_settings
 from src.utils.logger import get_logger
 from src.tools.filesystem import create_file
-from src.tools.api_fetch import fetch_api_data
 
 logger = get_logger(__name__)
 
@@ -162,152 +161,84 @@ def format_subtasks_status(subtasks: list, current_index: int) -> str:
     return "\n".join(lines)
 
 
-CODING_PROMPT = """You are a professional software engineer. Your task is to implement specific code based on requirements and architectural design.
+CODING_PROMPT = """You are a professional full-stack software engineer.
 
-**Complete User Requirements:**
-{user_requirement}
+**User Requirements**: {user_requirement}
+**Architecture Plan**: {architecture_plan}
+**Technology Stack**: {technology_stack}
+**All Subtasks Status**: {all_subtasks_status}
 
-**Overall Architecture Design:**
-{architecture_plan}
+**Current Task**: {current_task_index}/{total_tasks} — {task_title}
+**Task Description**: {task_description}
+**Files to Create/Modify**: {files_to_create}
+**Existing Files (reference only)**: {existing_files}
 
-**Technology Stack:**
-{technology_stack}
+**Requirements**:
+1. Fully understand the overall context from user requirements and completed subtasks.
+2. Reuse existing code, styles, and components whenever possible.
+3. Write complete, runnable, clean code following modern best practices.
+4. UI: Modern, responsive (flexbox/grid), good color scheme, spacing, hover effects, and transitions.
+5. Data handling:
+   - Prefer real data from external APIs.
+   - If architecture specifies a backend proxy, implement it (Flask/FastAPI) with proper CORS enabled.
+   - If direct frontend calls are allowed, use them.
+   - ONLY use mock data if explicitly permitted in requirements.
+6. Backend (if needed):
+   - Simple structure, use requests to fetch real data.
+   - Enable CORS properly (Flask: CORS(app, resources={{"/*": {{"origins": "*"}}}}) ).
+   - Include requirements.txt with necessary dependencies.
+   - Run on host='0.0.0.0', port=5000 (or similar).
+7. JavaScript best practices:
+   - Use <script defer> for external scripts OR place scripts at end of <body>.
+   - Add null checks for DOM elements when necessary.
+   - Ensure DOM operations run after page load.
+8. Navigation: If multiple pages exist, include consistent navigation bar with links.
+9. List/Detail pages: Implement both only if specified in plan.
 
-**All Subtasks Progress (understand overall situation):**
-{all_subtasks_status}
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-**Current Task:**
-Task {current_task_index}/{total_tasks}: {task_title}
-
-**Task Description:**
-{task_description}
-
-**Files to Create:**
-{files_to_create}
-
-**Completed Files (for reference and reuse):**
-{existing_files}
-
-**Requirements:**
-1. Carefully review the "Complete User Requirements" and "All Subtasks Progress" above to understand your task's position in the overall context
-2. Review "Completed Files" to understand existing code and functionality, ensuring new code integrates correctly
-3. Reuse existing styles, functions, and components - don't duplicate implementations
-4. Ensure generated code coordinates consistently with existing files
-5. Generate complete, runnable code for each file
-6. Use modern, aesthetically pleasing design styles
-7. Follow best practices (code standards, appropriate comments, clear structure)
-8. **UI Design Requirements**:
-   - Use modern, aesthetically pleasing design styles
-   - Proper color schemes (can use gradients, shadows, etc.)
-   - Adequate spacing and whitespace
-   - Responsive layout (flexbox/grid)
-   - Interactive feedback (hover effects, transition animations, etc.)
-9. **Static Data Approach for External APIs (Important)**:
-   - **Never use runtime fetch() or XMLHttpRequest in generated code** - this causes CORS errors
-   - **Use the fetch_api_data tool** to retrieve API data during code generation
-   - **Request sufficient data quantity**: When calling APIs, request 20-50 items minimum (e.g., max_results=50 for arXiv API)
-   - **Embed ALL retrieved data** as JavaScript constants in your generated code - don't truncate or use placeholders like "// More entries..."
-   - **Process and use static data** in your JavaScript logic
-   - Example workflow:
-     a) First, use fetch_api_data tool with sufficient quantity: fetch_api_data(url="http://export.arxiv.org/api/query?search_query=cat:cs.AI&max_results=50")
-     b) Then embed the COMPLETE result as: const STATIC_DATA = <all fetched items>;
-     c) Use STATIC_DATA in your code instead of runtime API calls
-   - This eliminates CORS issues since data is fetched server-side during code generation
-   - **Do NOT use placeholder comments** like "// More entries..." - embed all actual data
-10. Consider basic error handling
-11. Keep code concise and practical, avoid over-engineering
-12. **No Mock Data**: Unless explicitly specified by user, do NOT use mock/fake data. Use fetch_api_data tool to get real data
-13. **Navigation Bar Required**: If the project has multiple pages, MUST include a navigation bar for page switching in all HTML files
-14. **Page Navigation Completeness**: Ensure bidirectional navigation between pages
-   - List pages must have clickable links to detail pages (e.g., clicking paper title opens paperDetail.html?id=123)
-   - Detail pages must have back links to list/home pages (e.g., back button or navigation bar link)
-   - Navigation bar should include links to all major pages
-15. **JavaScript and HTML Integration Best Practices (Important)**:
-   - **Script Tag Loading**: When referencing JavaScript in HTML `<head>` or `<body>`, **must use `defer` attribute**
-     - Correct example: `<script src="js/app.js" defer></script>`
-     - Wrong example: `<script src="js/app.js"></script>` (missing defer)
-   - **Reason**: defer ensures scripts execute after DOM is fully parsed, preventing getElementById/querySelector from returning null
-   - **Alternative**: If defer cannot be used, place `<script>` tag before the closing `</body>` tag
-   - **DOM Operation Safety**: Ensure all getElementById, querySelector, and other DOM operations execute after elements are loaded
-   - **Null Checks**: Add null checks for DOM query results to avoid "Cannot read properties of null" errors
-     - Example: `const btn = document.getElementById('btn'); if (btn) {{ btn.addEventListener(...) }}`
-
-**Output Format:**
-For each file, use the following JSON format:
-
-```json
+**Output Format** (pure JSON, no extra text):
 {{
   "files": [
     {{
-      "path": "index.html",
+      "path": "path/to/file.html",
       "content": "Complete file content..."
     }}
   ]
 }}
-```
-
-Please return JSON directly without additional explanatory text. Ensure all file contents are complete and directly usable.
 """
 
 
-MODIFICATION_PROMPT = """You are a code modification expert. Your task is to modify existing code based on evaluation feedback.
+MODIFICATION_PROMPT = """You are an expert code fixer.
 
-**Complete User Requirements:**
-{user_requirement}
+**User Requirements**: {user_requirement}
+**Architecture Plan**: {architecture_plan}
+**File to Fix**: {file_path}
+**Current Content**: {current_content}
 
-**Overall Architecture Design:**
-{architecture_plan}
+**Issues**: {issues}
+**Suggestions**: {suggestions}
+**Other Files Summary**: {other_files_summary}
 
-**Current File to Modify:**
-File path: {file_path}
+**Tasks**:
+1. Make minimal, targeted changes to fix only the reported issues.
+2. Preserve existing style and structure.
+3. Ensure compatibility with other files.
+4. Key fixes to consider:
+   - Add defer to script tags or move to body end.
+   - Add null checks for DOM elements.
+   - Correct paths/selectors.
+   - Properly configure CORS if backend exists.
+   - Remove mock data unless explicitly allowed; implement real API calls.
+   - Ensure consistent field names between backend response and frontend usage.
 
-**Current Complete File Content:**
-```
-{current_content}
-```
-
-**Issues Found in Evaluation:**
-{issues}
-
-**Fix Suggestions:**
-{suggestions}
-
-**Other Related Files (for reference):**
-{other_files_summary}
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-**Your Tasks:**
-1. **Carefully read** the file content above to understand the existing implementation
-2. **Locate issues**: Based on "Issues Found in Evaluation", find specific locations that need modification
-3. **Minimize changes**: Only modify problematic parts, keep other parts unchanged
-4. **Verify integration**: Ensure modified code remains compatible with other files (refer to "Other Related Files")
-
-**Important Principles:**
-- ⚠️ Don't rewrite the entire file, only modify problematic parts
-- ⚠️ Keep code style consistent with the original file
-- ⚠️ Preserve all correct code and functionality
-- ⚠️ If the issue is "missing a feature", add it in appropriate location without deleting existing code
-- ⚠️ Check if HTML `<script>` tags have `defer` attribute or are placed before `</body>`
-- ⚠️ Ensure all DOM operation code doesn't execute before elements are loaded
-- ⚠️ Add null checks for DOM query results (e.g., `if (element) {{ ... }}`)
-- ⚠️ **Never use runtime fetch() or XMLHttpRequest** - replace with fetch_api_data tool and embed static data
-- ⚠️ If CORS errors are mentioned in issues, convert runtime API calls to static data approach
-
-**Output Format:**
-Return modified complete file content (JSON format):
+**Output** (pure JSON):
 {{
   "files": [
     {{
-      "path": "{file_path}",
-      "content": "Modified complete file content..."
+      "path": "{{file_path}}",
+      "content": "Full modified file content..."
     }}
   ]
 }}
-
-Please return JSON directly without additional explanatory text.
 """
 
 
@@ -336,13 +267,10 @@ def coding_node(state: AgentState) -> dict:
     settings = get_settings()
     llm = ChatOpenAI(
         model=settings.get_coder_model(),
-        temperature=0.2,
+        temperature=0.1,
         base_url=settings.openai_base_url,
         api_key=settings.openai_api_key
     )
-
-    # Bind the API fetch tool to allow fetching data during code generation
-    llm_with_tools = llm.bind_tools([fetch_api_data])
 
     # 判断是否为修改模式
     is_modification = current_task.get("is_modification", False)
@@ -405,40 +333,8 @@ def coding_node(state: AgentState) -> dict:
 
         logger.debug(f"Coding Agent: Invoking LLM for task '{current_task['title']}'")
 
-        # Invoke LLM with tool binding - may result in tool calls
-        response = llm_with_tools.invoke(messages)
-
-        # Handle tool calls if present
-        while hasattr(response, 'tool_calls') and response.tool_calls:
-            logger.info(f"Coding Agent: LLM requested {len(response.tool_calls)} tool call(s)")
-
-            # Execute each tool call
-            tool_messages = []
-            for tool_call in response.tool_calls:
-                tool_name = tool_call.get('name', '')
-                tool_args = tool_call.get('args', {})
-                tool_id = tool_call.get('id', '')
-
-                logger.info(f"Coding Agent: Executing tool '{tool_name}' with args: {tool_args}")
-
-                # Execute the tool
-                if tool_name == 'fetch_api_data':
-                    tool_result = fetch_api_data.invoke(tool_args)
-                    logger.debug(f"Coding Agent: Tool result: {str(tool_result)[:200]}...")
-
-                    # Create tool message
-                    from langchain_core.messages import ToolMessage
-                    tool_messages.append(ToolMessage(
-                        content=json.dumps(tool_result),
-                        tool_call_id=tool_id
-                    ))
-
-            # Add tool results to messages and invoke again
-            messages.append(response)
-            messages.extend(tool_messages)
-
-            logger.debug("Coding Agent: Invoking LLM again with tool results")
-            response = llm_with_tools.invoke(messages)
+        # Invoke LLM
+        response = llm.invoke(messages)
 
         logger.debug("=" * 80)
         logger.debug(f"CODING AGENT - RAW RESPONSE (Task {current_index + 1}/{len(state['subtasks'])}):")

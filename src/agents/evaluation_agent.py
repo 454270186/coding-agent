@@ -15,107 +15,54 @@ from src.tools.execution import run_syntax_check
 
 logger = get_logger(__name__)
 
-EVALUATION_PROMPT = """You are a code reviewer. Your task is to evaluate whether the generated code meets requirements and detect technical integration errors.
+EVALUATION_PROMPT = """You are an experienced code reviewer.
 
-**Original Requirements:**
-{task_description}
+**Original Requirements**: {task_description}
+**Subtasks**: {subtasks}
+**Generated/Modified Files**: {generated_files}
+**File Contents**: {file_contents}
+**Syntax Check Results**: {syntax_results}
 
-**Task List:**
-{subtasks}
+Evaluate focusing on two parts:
 
-**Generated Files:**
-{generated_files}
+**Part 1: Critical Technical Issues (must report if present)**
+1. Script loading: External JS must use defer OR be placed before </body> OR wrapped in DOMContentLoaded.
+2. DOM element existence: JS references to getElementById/querySelector must correspond to actual HTML elements.
+3. Path references: CSS/JS paths in HTML match actual files.
+4. CORS handling: If backend proxy is used, CORS must be properly enabled; frontend must call local backend, not external directly.
+5. Mock data: Hardcoded sample data used only if explicitly allowed.
+6. Selector matching: CSS classes/IDs match HTML.
+7. Module usage: If import/export used, script tag must have type="module".
 
-**File Contents (for checking integration issues):**
-{file_contents}
+**Part 2: Quality & Functionality**
+- Core functionality matches requirements.
+- UI is modern, responsive, and aesthetically pleasing (sufficient CSS, not too minimal).
+- Code is clean, readable, with reasonable structure.
+- Navigation and list/detail pages implemented as planned.
 
-**Syntax Check Results:**
-{syntax_results}
+**Principles**:
+- Report only real issues with specific file/line references.
+- Provide concrete, minimal fix suggestions.
+- Be lenient on non-critical styling variations.
+- UI fails only if obviously ugly or unusable.
 
-Please evaluate from the following aspects:
-
-## Part 1: Technical Integration Checks (Critical - Must Pass)
-
-Carefully check the following common technical integration errors. **These are fatal issues that prevent code from running**:
-
-1. **ES6 Module Errors**:
-   - ✓ Check: If JS files use `import`/`export`, HTML `<script>` tags must have `type="module"` attribute
-
-2. **HTML and CSS Selector Matching**:
-   - ✓ Check: If HTML uses `class="xxx"`, CSS should use `.xxx`; if HTML uses `id="xxx"`, CSS should use `#xxx`
-
-3. **File Reference Paths**:
-   - ✓ Check: Whether CSS/JS file paths referenced in HTML match the actual generated file paths
-
-4. **JavaScript Function Calls**:
-   - ✓ Check: Whether function call parameter types and counts match the function definition
-
-5. **DOM Element References**:
-   - ✓ Check: Whether elements retrieved by ID/class in JS exist in HTML
-
-6. **Necessary Rendering Functions**:
-   - ✓ Check: If there is game logic or dynamic content, there must be rendering functions to display data on the page
-
-7. **No Runtime API Calls (Critical)**:
-   - ✓ Check: JavaScript code should NOT contain runtime fetch(), XMLHttpRequest, or axios API calls
-   - ✓ Check: Data should be embedded as static JavaScript constants (e.g., const STATIC_DATA = <data>)
-   - ✓ Check: Static data should contain sufficient items (at least 10+ items, not just 1-2 samples)
-   - ✓ Check: No placeholder comments like "// More entries..." - all data should be present
-   - ❌ Wrong example: fetch('http://api.example.com/data').then(...) or const DATA = <two items>, // More entries...
-   - ✓ Correct example: const STATIC_DATA = <20+ complete items>; // Use STATIC_DATA directly
-   - ✓ Reason: Runtime API calls cause CORS errors; static data approach eliminates this issue
-
-8. **JavaScript Loading Timing (Critical)**:
-   - ✓ Check: When HTML `<script>` tags reference external JS files, they must satisfy one of the following:
-     a) Use `defer` attribute: `<script src="..." defer></script>` (Recommended)
-     b) Place `<script>` tag before the closing `</body>` tag
-     c) Wrap all DOM operations in JS code with DOMContentLoaded event
-   - ✓ Check: Ensure DOM operations in JS code (getElementById, addEventListener, etc.) execute after elements exist
-   - ❌ Wrong example: Using `<script src="app.js"></script>` in `<head>` without defer
-   - ✓ Correct example: `<script src="app.js" defer></script>` or placing at body bottom
-   - ✓ Reason: Otherwise getElementById/querySelector returns null, causing "Cannot read properties of null" runtime error
-
-9. **Page Navigation Completeness (Important)**:
-   - ✓ Check: If project has multiple HTML pages, verify bidirectional navigation exists
-   - ✓ Check: List pages should link to detail pages (e.g., click on item to view details)
-   - ✓ Check: Detail pages should link back to list/home pages (e.g., back button or navigation bar)
-   - ✓ Check: Navigation bar (if exists) should include links to all major pages
-   - ❌ Wrong example: paperDetail.html links to index.html, but index.html has no way to reach paperDetail.html
-   - ✓ Correct example: index.html displays paper list with clickable links to paperDetail.html, and paperDetail.html has back button to index.html
-
-## Part 2: Functionality and Quality Evaluation
-
-10. **Core Functionality**: Basically implements the main features in the requirements
-11. **Syntax Correctness**: Code has no obvious syntax errors
-12. **File Completeness**: Has necessary HTML/CSS/JS files
-13. **Basic Usability**: Code logic is generally reasonable
-14. **UI Quality**: Whether the interface is beautiful and modern, whether the layout is reasonable, whether there are sufficient styles
-
-**Evaluation Principles (Important):**
-- **Technical errors in Part 1 must be reported**: Any integration error will cause code to fail, and must be clearly stated in issues
-- **Provide specific fix suggestions**: Don't just say "there's a problem", point out which file and which line needs how to be modified
-- **Filenames don't matter**: As long as file reference relationships are correct, different filenames are okay
-- **UI Criteria**: If CSS is too simple (less than 20 lines) or lacks basic styles (color, spacing, layout), mark as fail
-- **Lenient on functionality**: Only mark as fail on obvious defects
-
-For each task, please return evaluation results:
-
-```json
+Return ONLY JSON:
 {{
   "results": [
     {{
-      "task_id": "task_1",
+      "task_id": "<use EXACT id from subtasks list above>",
       "passed": true/false,
-      "issues": ["Issue description 1", "Issue description 2"],
-      "suggestions": ["Fix suggestion 1", "Fix suggestion 2"]
+      "issues": ["Specific issue description with file reference"],
+      "suggestions": ["Concrete fix suggestion"]
     }}
   ],
   "overall_passed": true/false,
-  "summary": "Overall evaluation summary"
+  "summary": "Brief overall summary"
 }}
-```
 
-Please return JSON directly without additional explanatory text.
+**CRITICAL**: For task_id, you MUST use the EXACT "id" field from the **Subtasks** list provided above.
+For example, if subtasks contains {{"id": "fix_0_0", ...}}, use "fix_0_0" as task_id (NOT "task_1" or any other value).
+Evaluate EACH task in the subtasks list and return a result for each one.
 """
 
 
