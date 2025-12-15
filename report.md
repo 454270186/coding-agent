@@ -82,19 +82,19 @@ Build a calculator with add, sub, mul, divide opration in purple background
 
 1. todo list：
 
-   ![image-20251215162753439](/Users/yuerfei/Library/Application Support/typora-user-images/image-20251215162753439.png)
+   <img src="/Users/yuerfei/Library/Application Support/typora-user-images/image-20251215162753439.png" alt="image-20251215162753439" style="zoom:25%; float:left" />
 
 2. files context:
 
-   <img src="/Users/yuerfei/Library/Application Support/typora-user-images/image-20251215162905881.png" alt="image-20251215162905881" style="zoom:40%; float:left" />
+   <img src="/Users/yuerfei/Library/Application Support/typora-user-images/image-20251215162905881.png" alt="image-20251215162905881" style="zoom:20%; float:left" />
 
 3. code review results:
 
-   <img src="/Users/yuerfei/Library/Application Support/typora-user-images/image-20251215163039830.png" alt="image-20251215163039830" style="zoom:50%;" />
+   <img src="/Users/yuerfei/Library/Application Support/typora-user-images/image-20251215163039830.png" alt="image-20251215163039830" style="zoom:10%; float:left" />
 
 **Final Results:**
 
-<img src="/Users/yuerfei/Library/Application Support/typora-user-images/image-20251215162633915.png" alt="image-20251215162633915" style="zoom:20%; float:left" />
+<img src="/Users/yuerfei/Library/Application Support/typora-user-images/image-20251215162633915.png" alt="image-20251215162633915" style="zoom:10%; float:left" />
 
 
 
@@ -122,20 +122,26 @@ Design a comprehensive detail page that centralizes critical resources: direct P
 
 1. task decomposition:
 
-   <img src="/Users/yuerfei/Library/Application Support/typora-user-images/image-20251215163405561.png" alt="image-20251215163405561" style="zoom:30%; float:left" />
+   <img src="/Users/yuerfei/Library/Application Support/typora-user-images/image-20251215163405561.png" alt="image-20251215163405561" style="zoom:10%; float:left" />
 
 2. todo list:
 
-   ![image-20251215163525187](/Users/yuerfei/Library/Application Support/typora-user-images/image-20251215163525187.png)
+   <img src="/Users/yuerfei/Library/Application Support/typora-user-images/image-20251215163525187.png" alt="image-20251215163525187" style="zoom:33%; float:left" />
 
 3. files context:
 
-   <img src="/Users/yuerfei/Library/Application Support/typora-user-images/image-20251215163554411.png" alt="image-20251215163554411" style="zoom:50%; float:left" />
+   <img src="/Users/yuerfei/Library/Application Support/typora-user-images/image-20251215163554411.png" alt="image-20251215163554411" style="zoom:20%; float:left" />
 
 4. code review:
 
-   <img src="/Users/yuerfei/Library/Application Support/typora-user-images/image-20251215163638799.png" alt="image-20251215163638799" style="zoom:40%; float:left" />
+   <img src="/Users/yuerfei/Library/Application Support/typora-user-images/image-20251215163638799.png" alt="image-20251215163638799" style="zoom:20%; float:left" />
 
 **Final results**
 
-<img src="/Users/yuerfei/Desktop/Xnip2025-12-15_15-45-42.png" style="zoom:50%;" />
+<img src="/Users/yuerfei/Desktop/Xnip2025-12-15_15-45-42.png" style="zoom:20%; float:left" />
+
+
+
+## Appendix
+
+GitHub Repo: https://github.com/454270186/coding-agent
