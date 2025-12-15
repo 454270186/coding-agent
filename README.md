@@ -1,244 +1,180 @@
-# Coding Agent System
+# Multi-Agent Code Generation System
 
-多智能体协作的代码生成系统 - 第一阶段：TUI 入口与配置管理
+**Transform natural language descriptions into fully functional web applications using a collaborative multi-agent AI pipeline.**
 
-## 项目简介
+![Python 3.10+](https://img.shields.io/badge/Python-3776AB.svg?style=for-the-badge&logo=Python&logoColor=white)
+![LangChain](https://img.shields.io/badge/LangChain-1C3C3C.svg?style=for-the-badge&logo=LangChain&logoColor=white)
+![LangGraph](https://img.shields.io/badge/LangGraph-1C3C3C.svg?style=for-the-badge&logo=LangGraph&logoColor=white)
 
-这是一个基于 LangGraph 的多智能体协作系统，旨在从自然语言描述自动完成软件开发任务。当前实现了第一阶段：友好的 TUI（Terminal User Interface）交互界面和配置管理系统。
+An intelligent system that automatically generates executable web applications from natural language prompts using a 4-agent collaborative workflow powered by LangGraph.
 
-## 功能特性
+## Overview
 
-### 第一阶段（已完成）✅
-- ✅ 使用 Rich 库构建的美观终端用户界面
-- ✅ 基于 Pydantic 的配置文件读取和验证
-- ✅ 欢迎界面和系统信息显示
-- ✅ 配置信息表格展示（自动遮蔽敏感信息）
-- ✅ 任务输入界面
-- ✅ Rich 美化的日志系统
+This Multi-Agent Code Generation System converts natural language requirements into complete, runnable web applications with minimal human intervention. It employs a sophisticated pipeline of four specialized AI agents—Planning, Coding, Evaluation, and Fix—orchestrated via LangGraph.
 
-### 后续阶段（规划中）🚧
-- 🚧 Phase 2: 实现 Planning、Coding、Evaluation 三种 Agent
-- 🚧 Phase 3: 使用 LangGraph 构建多智能体协作工作流
-- 🚧 Phase 4: 集成文件系统、Web 搜索、代码执行等工具
-- 🚧 Phase 5: 完成 arXiv CS Daily 测试用例
+The key innovation lies in its intelligent context management for multi-file projects, enabling efficient handling of complex applications while maintaining coherence across iterations. Context is intelligently compressed (90-95% reduction) during generation and expanded only when needed for repairs, allowing the system to scale to larger codebases.
 
-## 项目结构
+Developed as a coursework project for Data Mining at The University of Hong Kong, this system demonstrates advanced applications of large language models in automated software engineering.
+
+## Features
+
+- Natural language to executable code transformation
+- Multi-agent collaborative workflow (Planning → Coding → Evaluation → Fix)
+- Automatic code quality evaluation (syntax, integration, functionality)
+- Iterative refinement with up to 3 correction cycles
+- Context-aware generation supporting complex, multi-file projects
+- Sandboxed workspace for safe code execution and isolation
+
+## Quick Start
+
+### Prerequisites
+
+- Python 3.10+ (recommended: 3.11–3.12)
+- [uv](https://docs.astral.sh/uv/) package manager
+- OpenAI API key (GPT-4 or compatible model)
+- (Optional) Node.js for enhanced JavaScript syntax checking
+
+### Installation
+
+```bash
+# 1. Clone the repository
+git clone <your-repo-url>
+cd assignment1
+
+# 2. Install uv (if not already installed)
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# 3. Copy and configure environment variables
+cp .env.example .env
+# Edit .env and add your OpenAI API key
+
+# 4. Launch the system
+./run.sh
+```
+
+### Configuration (.env)
+
+| Variable                | Required | Description                              | Default          |
+|-------------------------|----------|------------------------------------------|------------------|
+| OPENAI_API_KEY          | Yes      | Your OpenAI API key                      | -                |
+| OPENAI_BASE_URL         | No       | Custom API endpoint (e.g., for proxies)  | OpenAI default   |
+| OPENAI_MODEL            | No       | Primary model to use                     | gpt-4            |
+| PLANNING_MODEL          | No       | Model for Planning Agent                 | gpt-4            |
+| CODING_MODEL            | No       | Model for Coding Agent                   | gpt-4            |
+| EVALUATION_MODEL        | No       | Model for Evaluation Agent               | gpt-4            |
+| FIX_MODEL               | No       | Model for Fix Agent                      | gpt-4            |
+| WORKSPACE_DIR           | No       | Directory for generated code             | ./workspace      |
+| LOG_LEVEL               | No       | Logging verbosity                        | INFO             |
+
+## Usage Examples
+
+### Example 1: Simple Calculator
+
+**Input:**
+```
+Build a calculator with add, sub, mul, divide operation in purple background
+```
+
+**Output:**
+Generates a responsive web calculator with:
+- HTML structure (`index.html`)
+- Purple-themed styling (`styles.css`)
+- Interactive logic (`script.js`)
+
+The result is a clean, functional calculator with a visually appealing interface.
+
+### Example 2: arXiv CS Daily Webpage
+
+**Input:**
+```
+Build an "arXiv CS Daily" webpage with:
+1. Domain-Specific Navigation System (cs.AI, cs.TH, etc.)
+2. Daily Updated Paper List with titles, timestamps, tags
+3. Dedicated Paper Detail Page with PDF links, metadata, citations
+```
+
+**Output:**
+A multi-page web application featuring:
+- Navigation across Computer Science subfields
+- Dynamic paper listings with metadata
+- Individual paper detail pages
+- BibTeX and standard citation export
+- Clean, academic-style UI
+
+## Architecture
+
+<img src="./img/arch.png" style="zoom:67%;" />
+
+**Key Components:**
+
+- **Planning Agent**: Analyzes requirements, selects tech stack, breaks into subtasks
+- **Coding Agent**: Generates and modifies files using compressed context
+- **Evaluation Agent**: Performs syntax checks, integration testing, and quality review
+- **Fix Agent**: Diagnoses issues and creates precise repair instructions
+- **LangGraph**: Manages state, agent transitions, and workflow orchestration
+
+## Project Structure
 
 ```
 assignment1/
-├── .env                    # 环境变量配置
-├── .env.example           # 配置模板
-├── pyproject.toml         # 项目配置（uv 管理）
-├── README.md              # 本文档
-│
-├── src/                   # 源代码
-│   ├── config/            # 配置管理
-│   │   └── settings.py    # 配置加载与验证
-│   ├── ui/                # TUI 界面
-│   │   ├── welcome.py     # 欢迎界面
-│   │   ├── display.py     # 配置显示
-│   │   └── input.py       # 任务输入
-│   ├── utils/             # 工具函数
-│   │   └── logger.py      # 日志配置
-│   ├── agents/            # Agent 模块（Phase 2）
-│   ├── tools/             # 工具模块（Phase 4）
-│   ├── graph/             # LangGraph 工作流（Phase 3）
-│   └── main.py            # 主入口
-│
-├── workspace/             # Agent 工作目录
-└── logs/                  # 日志文件
+├── src/
+│   ├── agents/           # Four specialized AI agents
+│   ├── graph/            # LangGraph workflow definition
+│   ├── tools/            # File operations, execution, API tools
+│   ├── config/           # Configuration and environment handling
+│   ├── ui/               # Rich-based terminal interface
+│   ├── utils/            # Logging and helper utilities
+│   └── main.py           # Application entry point
+├── workspace/            # Generated project files (output)
+├── logs/                 # Detailed execution logs
+├── .env.example          # Template for environment variables
+├── pyproject.toml        # Project dependencies (managed by uv)
+├── run.sh                # Convenient launch script
+└── report.md             # In-depth technical documentation
 ```
 
-## 安装与配置
+## How It Works
 
-### 1. 环境要求
+1. User enters a natural language task via the CLI
+2. **Planning Agent** analyzes the request and creates 2–5 focused subtasks
+3. **Coding Agent** generates files sequentially with context compression
+4. **Evaluation Agent** validates syntax, integration, and overall quality
+5. **Fix Agent** (if needed) analyzes failures and proposes targeted fixes
+6. Steps 3–5 repeat up to 3 times for refinement
+7. Final complete codebase is saved in `./workspace/`
 
-- Python >= 3.14
-- [uv](https://github.com/astral-sh/uv) 包管理器
+**Context Management Innovation:**
+- Reduces context size by 90–95% using intelligent summarization
+- Uses summaries during normal generation, full content only for repairs
+- Shared state ensures consistency across all agents
 
-### 2. 安装 uv（如果尚未安装）
+## Dependencies
 
-```bash
-# macOS/Linux
-curl -LsSf https://astral.sh/uv/install.sh | sh
+- LangChain & LangGraph
+- OpenAI API
+- Pydantic
+- python-dotenv
+- Rich (for beautiful terminal UI)
+- pytest, black, flake8 (development tools)
 
-# Windows
-powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
-```
+## Output
 
-### 3. 克隆项目并安装依赖
+- Generated code: `./workspace/` directory
+- Supported file types: HTML, CSS, JavaScript, Python, etc.
+- Logs: `./logs/code-agent.log`
+- Real-time feedback and final summary in terminal
 
-```bash
-cd assignment1
+## Troubleshooting
 
-# 创建虚拟环境（如果还没有）
-uv venv
+- **Missing .env**: Copy from `.env.example` and add your API key
+- **Invalid API key**: Verify `OPENAI_API_KEY` in `.env`
+- **uv not found**: Re-run the installation curl command
+- **Generation fails**: Check detailed logs in `./logs/code-agent.log`
 
-# 激活虚拟环境
-source .venv/bin/activate  # macOS/Linux
-# 或
-.venv\Scripts\activate     # Windows
+## Technical Details
 
-# 安装依赖
-uv sync
-```
+For a deep dive into the architecture, context management strategy, performance benchmarks, and implementation details, please refer to [report.md](report.md).
 
-### 4. 配置环境变量
+## Author
 
-复制 `.env.example` 并修改为你的配置：
-
-```bash
-cp .env.example .env
-```
-
-编辑 `.env` 文件，填入你的配置：
-
-```ini
-# OpenAI Compatible API Configuration
-OPENAI_API_KEY=your-api-key-here
-OPENAI_BASE_URL=https://api.openai.com/v1
-OPENAI_MODEL=gpt-4
-
-# Workspace Configuration
-WORKSPACE_DIR=./workspace
-
-# Logging
-LOG_LEVEL=INFO
-LOG_FILE=./logs/code-agent.log
-```
-
-## 使用方法
-
-### 运行程序
-
-```bash
-# 方法 1: 使用 uv run（推荐）
-uv run python -m src.main
-
-# 方法 2: 激活虚拟环境后运行
-source .venv/bin/activate
-python -m src.main
-
-# 调试模式
-uv run python -m src.main --debug
-```
-
-### 使用示例
-
-运行程序后，你会看到：
-
-1. **欢迎界面**：显示项目信息和系统状态
-2. **配置信息**：以表格形式展示所有配置（API Key 已遮蔽）
-3. **任务输入**：提示输入开发任务描述
-
-示例输入：
-```
-Task Description: Build a simple calculator web app with HTML, CSS and JavaScript
-```
-
-程序会确认接收到的任务并记录日志。
-
-## 技术栈
-
-### 核心依赖
-- **python-dotenv**: 环境变量管理
-- **pydantic**: 配置验证和数据建模
-- **pydantic-settings**: 设置管理
-- **rich**: 终端 UI 美化
-- **langchain**: LLM 框架（后续阶段使用）
-- **langgraph**: 工作流编排（后续阶段使用）
-- **openai**: OpenAI API 客户端
-
-### 开发工具
-- **pytest**: 单元测试
-- **black**: 代码格式化
-- **flake8**: 代码检查
-
-## 开发说明
-
-### 代码规范
-
-项目遵循 PEP 8 标准：
-
-```bash
-# 格式化代码
-uv run black src/
-
-# 检查代码
-uv run flake8 src/
-```
-
-### 运行测试
-
-```bash
-uv run pytest
-```
-
-### 日志系统
-
-日志同时输出到：
-- **控制台**：使用 Rich 美化，实时显示
-- **文件**：保存到 `./logs/code-agent.log`
-
-日志级别可通过 `.env` 中的 `LOG_LEVEL` 配置。
-
-## 项目特色
-
-1. **模块化设计**：清晰的目录结构，便于扩展
-2. **类型安全**：使用 Pydantic 进行配置验证
-3. **美观界面**：Rich 库提供的精美终端 UI
-4. **安全性**：敏感信息（API Key）自动遮蔽
-5. **完善日志**：双输出日志系统，方便调试
-6. **现代工具链**：使用 uv 进行快速包管理
-
-## 下一步计划
-
-完成第一阶段后，将按以下顺序开发：
-
-### Phase 2: Agent 实现
-- 定义 Agent 基类
-- 实现 Planning Agent（任务分解）
-- 实现 Coding Agent（代码生成）
-- 实现 Evaluation Agent（代码评审）
-- 设计高质量的系统提示词
-
-### Phase 3: LangGraph 工作流
-- 定义状态图结构
-- 实现 Agent 之间的协作流程
-- 添加检查点和状态管理
-- 实现任务调度逻辑
-
-### Phase 4: 工具集成
-- 文件系统工具（create_file, write_to_file, read_file）
-- Web 搜索工具（集成 Brave Search API）
-- 代码执行工具（Shell 命令执行）
-
-### Phase 5: 测试与优化
-- 完成 arXiv CS Daily 网页生成测试
-- 优化提示词和工作流
-- 性能调优
-- 撰写项目报告
-
-## 作业要求
-
-本项目是 COMP7103C 课程作业的一部分。完整要求请参考 `COMP7103C Course Assignment Instructions (1).pdf`。
-
-### 最终交付物
-- ✅ Git 仓库链接（包含详细 README）
-- 📝 项目报告（PDF）
-- 🎥 TA 现场演示
-
-## 许可证
-
-本项目仅用于学术目的。
-
-## 联系方式
-
-如有问题，请联系助教：
-- Zongwei Li: zongwei9888@gmail.com
-- Yangqin Jiang: mrjiangyq99@gmail.com
-
----
-
-**当前版本**: v0.1 (Phase 1 完成)
-**最后更新**: 2024-12-13
+**Erfei YU**  

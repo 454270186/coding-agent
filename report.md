@@ -37,7 +37,7 @@ The agents’ capabilities are extended through a set of practical tools that br
 
 ## **4. Context Management Strategy**
 
-**4.1 The Core Challenge and Strategic Approach**
+**4.1 The Key Challenge and Strategic Approach**
 A fundamental constraint in multi-step, multi-file code generation is the finite context window of LLMs. Passing the complete content of all previously generated files to each agent would quickly exhaust token limits and degrade performance. Our system solves this through a dual-strategy approach: **centralized state management** for workflow coherence and **intelligent context compression** for efficient information transfer.
 
 **4.2 Centralized State Management with LangGraph**
@@ -94,7 +94,7 @@ Build a calculator with add, sub, mul, divide opration in purple background
 
 **Final Results:**
 
-<img src="/Users/yuerfei/Library/Application Support/typora-user-images/image-20251215162633915.png" alt="image-20251215162633915" style="zoom:50%;" />
+<img src="/Users/yuerfei/Library/Application Support/typora-user-images/image-20251215162633915.png" alt="image-20251215162633915" style="zoom:20%; float:left" />
 
 
 
@@ -122,7 +122,7 @@ Design a comprehensive detail page that centralizes critical resources: direct P
 
 1. task decomposition:
 
-   <img src="/Users/yuerfei/Library/Application Support/typora-user-images/image-20251215163405561.png" alt="image-20251215163405561" style="zoom:50%;" />
+   <img src="/Users/yuerfei/Library/Application Support/typora-user-images/image-20251215163405561.png" alt="image-20251215163405561" style="zoom:30%; float:left" />
 
 2. todo list:
 
@@ -136,7 +136,6 @@ Design a comprehensive detail page that centralizes critical resources: direct P
 
    <img src="/Users/yuerfei/Library/Application Support/typora-user-images/image-20251215163638799.png" alt="image-20251215163638799" style="zoom:40%; float:left" />
 
-
-
 **Final results**
 
+<img src="/Users/yuerfei/Desktop/Xnip2025-12-15_15-45-42.png" style="zoom:50%;" />
