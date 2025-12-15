@@ -38,33 +38,35 @@ Developed as a coursework project for Data Mining at The University of Hong Kong
 
 ```bash
 # 1. Clone the repository
-git clone <your-repo-url>
-cd assignment1
+git clone https://github.com/454270186/coding-agent.git
 
 # 2. Install uv (if not already installed)
 curl -LsSf https://astral.sh/uv/install.sh | sh
 
-# 3. Copy and configure environment variables
+# 3. install dependency
+uv sync
+
+# 4. Copy and configure environment variables
 cp .env.example .env
 # Edit .env and add your OpenAI API key
 
-# 4. Launch the system
+# 5. Launch the system
 ./run.sh
 ```
 
 ### Configuration (.env)
 
-| Variable                | Required | Description                              | Default          |
-|-------------------------|----------|------------------------------------------|------------------|
-| OPENAI_API_KEY          | Yes      | Your OpenAI API key                      | -                |
-| OPENAI_BASE_URL         | No       | Custom API endpoint (e.g., for proxies)  | OpenAI default   |
-| OPENAI_MODEL            | No       | Primary model to use                     | gpt-4            |
-| PLANNING_MODEL          | No       | Model for Planning Agent                 | gpt-4            |
-| CODING_MODEL            | No       | Model for Coding Agent                   | gpt-4            |
-| EVALUATION_MODEL        | No       | Model for Evaluation Agent               | gpt-4            |
-| FIX_MODEL               | No       | Model for Fix Agent                      | gpt-4            |
-| WORKSPACE_DIR           | No       | Directory for generated code             | ./workspace      |
-| LOG_LEVEL               | No       | Logging verbosity                        | INFO             |
+| Variable         | Required | Description                             | Default        |
+| ---------------- | -------- | --------------------------------------- | -------------- |
+| OPENAI_API_KEY   | Yes      | Your OpenAI API key                     | -              |
+| OPENAI_BASE_URL  | No       | Custom API endpoint (e.g., for proxies) | OpenAI default |
+| OPENAI_MODEL     | No       | Primary model to use                    | gpt-4          |
+| PLANNING_MODEL   | No       | Model for Planning Agent                | gpt-4          |
+| CODING_MODEL     | No       | Model for Coding Agent                  | gpt-4          |
+| EVALUATION_MODEL | No       | Model for Evaluation Agent              | gpt-4          |
+| FIX_MODEL        | No       | Model for Fix Agent                     | gpt-4          |
+| WORKSPACE_DIR    | No       | Directory for generated code            | ./workspace    |
+| LOG_LEVEL        | No       | Logging verbosity                       | INFO           |
 
 ## Usage Examples
 
@@ -174,7 +176,3 @@ assignment1/
 ## Technical Details
 
 For a deep dive into the architecture, context management strategy, performance benchmarks, and implementation details, please refer to [report.md](report.md).
-
-## Author
-
-**Erfei YU**  
